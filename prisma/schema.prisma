@@ -1,0 +1,50 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+
+model Event {
+  id                 String    @id @default(cuid())
+  code               String    @unique
+  djName             String
+  djPhone            String
+  venmoUsername       String?
+  spotifyPlaylistId  String?
+  acceptingRequests  Boolean   @default(true)
+  tipAmounts         String    @default("2,5,10")
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  requests           Request[]
+  tips               Tip[]
+}
+
+model Request {
+  id             String   @id @default(cuid())
+  eventId        String
+  songTitle      String
+  artistName     String
+  spotifyTrackId String?
+  note           String?
+  ipHash         String?
+  createdAt      DateTime @default(now())
+  event          Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  tips           Tip[]
+}
+
+model Tip {
+  id               String   @id @default(cuid())
+  eventId          String
+  requestId        String?
+  amount           Int
+  provider         String   @default("stripe")
+  status           String   @default("pending")
+  stripeSessionId  String?
+  createdAt        DateTime @default(now())
+  event            Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  request          Request? @relation(fields: [requestId], references: [id], onDelete: SetNull)
+}
