@@ -32,6 +32,7 @@ export default function AdminPage() {
   const [venmo, setVenmo] = useState('')
   const [tipAmounts, setTipAmounts] = useState('2,5,10')
   const [creating, setCreating] = useState(false)
+  const [createError, setCreateError] = useState('')
 
   // Events list
   const [events, setEvents] = useState<Event[]>([])
@@ -86,20 +87,28 @@ export default function AdminPage() {
   async function handleCreateEvent(e: React.FormEvent) {
     e.preventDefault()
     setCreating(true)
-    const res = await fetch('/api/events', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${password}`,
-      },
-      body: JSON.stringify({ djName, djPhone, venmoUsername: venmo || undefined, tipAmounts }),
-    })
-    if (res.ok) {
-      setDjName('')
-      setDjPhone('')
-      setVenmo('')
-      setTipAmounts('2,5,10')
-      fetchEvents()
+    setCreateError('')
+    try {
+      const res = await fetch('/api/events', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${password}`,
+        },
+        body: JSON.stringify({ djName, djPhone, venmoUsername: venmo || undefined, tipAmounts }),
+      })
+      if (res.ok) {
+        setDjName('')
+        setDjPhone('')
+        setVenmo('')
+        setTipAmounts('2,5,10')
+        fetchEvents()
+      } else {
+        const data = await res.json()
+        setCreateError(data.error ? JSON.stringify(data.error) : 'Failed to create event')
+      }
+    } catch {
+      setCreateError('Network error — check your connection')
     }
     setCreating(false)
   }
@@ -270,6 +279,7 @@ export default function AdminPage() {
             value={tipAmounts}
             onChange={(e) => setTipAmounts(e.target.value)}
           />
+          {createError && <p className="text-red-400 text-sm">{createError}</p>}
           <button type="submit" className="btn btn-primary w-full" disabled={creating}>
             {creating ? 'Creating...' : 'Create Event'}
           </button>
